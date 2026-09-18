@@ -22,12 +22,12 @@ export async function getStaticPaths() {
 type Props = PydocsRouteProps;
 
 const props = Astro.props;
-const { scope, page, withSearch } = await resolvePydocsPage(context, props);
+const { scope, page, headings, withSearch } = await resolvePydocsPage(context, props);
 ---
 
 <Layout
   title={page.title}
-  headings={page.headings}
+  headings={headings}
   description={page.object.summary}
   links={markdownAlternate(context, props.pydocsSlug)}
 >

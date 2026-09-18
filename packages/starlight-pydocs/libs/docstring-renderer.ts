@@ -23,10 +23,12 @@ import { writeAtomic } from '../lib/cache.ts';
 import type { CrossReferenceResolver } from '../lib/crossrefs.ts';
 import { resolveCrossReferences } from '../lib/crossrefs.ts';
 import { loadDump } from '../lib/data.ts';
+import type { DocstringRenderResult } from '../lib/docstrings.ts';
 import { assembleRenderedDocstrings, collectDocstringMarkdown } from '../lib/docstrings.ts';
 import { errorMessage, PydocsError } from '../lib/errors.ts';
 import type { PydocsLogger } from '../lib/logger.ts';
 import { silentLogger } from '../lib/logger.ts';
+import type { PageHeading } from '../lib/model.ts';
 
 const legacyMarkdownRemark = import('@astrojs/markdown-remark').catch(() => null);
 
@@ -36,15 +38,44 @@ interface MarkdownProcessorLike {
   createRenderer(shared: unknown): Promise<MarkdownRendererLike>;
 }
 
+/**
+ * `metadata.headings` is a remark-rehype convention, not something every
+ * `createRenderer` implementation is guaranteed to return (a third-party
+ * processor may return bare `{ code }`), so it is read defensively rather
+ * than assumed.
+ */
 interface MarkdownRendererLike {
-  render(content: string, options?: unknown): Promise<{ code: string }>;
+  render(content: string, options?: unknown): Promise<{ code: string; metadata?: unknown }>;
 }
 
-/** Renders one Markdown string to HTML. */
+/** Renders one Markdown string to HTML, and reports the headings it produced. */
 export interface DocstringRenderer {
   /** Name of the engine behind it, for the build log. */
   name: string;
-  render(markdown: string): Promise<string>;
+  render(markdown: string): Promise<DocstringRenderResult>;
+}
+
+/**
+ * Pull `{ depth, slug, text }` headings out of a renderer's `metadata`,
+ * validating each entry rather than trusting a third-party processor's shape.
+ * The `slug` is the same string the processor wrote as the heading's `id`, so
+ * a heading pulled from here always addresses the HTML it came from.
+ */
+function extractHeadings(result: { metadata?: unknown }): PageHeading[] {
+  const metadata = result.metadata;
+  if (typeof metadata !== 'object' || metadata === null) return [];
+  const headings = (metadata as { headings?: unknown }).headings;
+  if (!Array.isArray(headings)) return [];
+
+  return headings.filter((heading): heading is PageHeading => {
+    return (
+      typeof heading === 'object' &&
+      heading !== null &&
+      typeof (heading as PageHeading).depth === 'number' &&
+      typeof (heading as PageHeading).slug === 'string' &&
+      typeof (heading as PageHeading).text === 'string'
+    );
+  });
 }
 
 function isProcessorLike(value: unknown): value is MarkdownProcessorLike {
@@ -70,7 +101,10 @@ export async function resolveDocstringRenderer(markdown: AstroConfig['markdown']
     const renderer = await processor.createRenderer(markdown);
     return {
       name: typeof processor.name === 'string' ? processor.name : 'markdown.processor',
-      render: async (source) => (await renderer.render(source)).code,
+      render: async (source) => {
+        const result = await renderer.render(source);
+        return { html: result.code, headings: extractHeadings(result) };
+      },
     };
   }
 
@@ -83,7 +117,10 @@ export async function resolveDocstringRenderer(markdown: AstroConfig['markdown']
     const renderer = await legacy.createMarkdownProcessor(shared);
     return {
       name: '@astrojs/markdown-remark',
-      render: async (source) => (await renderer.render(source)).code,
+      render: async (source) => {
+        const result = await renderer.render(source);
+        return { html: result.code, headings: extractHeadings(result) };
+      },
     };
   }
 
@@ -127,30 +164,31 @@ export async function renderDocstringsForDump(options: RenderDocstringsOptions):
   const items = collectDocstringMarkdown(await loadDump(options.dumpPath));
   const crossReferences = options.crossReferences;
 
-  const html: string[] = [];
+  const renders: DocstringRenderResult[] = [];
   for (let start = 0; start < items.length; start += RENDER_BATCH) {
     const batch = items.slice(start, start + RENDER_BATCH);
-    html.push(
+    renders.push(
       ...(await Promise.all(
-        batch.map(async (item) => {
+        batch.map(async (item): Promise<DocstringRenderResult> => {
           // Cross-references become ordinary Markdown links before the
           // processor sees them; nothing downstream knows they were special.
           const markdown =
             crossReferences === undefined ? item.markdown : resolveCrossReferences(item.markdown, crossReferences);
           try {
-            return (await options.renderer.render(markdown)).trim();
+            const result = await options.renderer.render(markdown);
+            return { html: result.html.trim(), headings: result.headings };
           } catch (cause) {
             // One unrenderable docstring must not fail a build; the prose is
             // dropped and the object still documents its structure.
             logger.warn(`could not render a docstring of ${item.objectPath}: ${errorMessage(cause)}`);
-            return '';
+            return { html: '', headings: [] };
           }
         }),
       )),
     );
   }
 
-  const rendered = assembleRenderedDocstrings(items, html);
+  const rendered = assembleRenderedDocstrings(items, renders);
   await writeAtomic(options.renderedPath, `${JSON.stringify(rendered)}\n`);
   logger.debug(`rendered ${String(items.length)} docstring strings to ${options.renderedPath}`);
   return { count: items.length };

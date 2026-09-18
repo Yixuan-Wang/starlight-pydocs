@@ -9,11 +9,12 @@
 import type { PydocsContext, PydocsPackageContext } from '../lib/context.ts';
 import { packageForSlug } from '../lib/context.ts';
 import { getModel } from '../lib/data.ts';
+import { mergeDocstringHeadings } from '../lib/docstrings.ts';
 import { listPydocsPages } from '../lib/pages.ts';
 import type { RenderScope } from '../lib/render.ts';
 import { createRenderScope } from '../lib/render.ts';
 import { PydocsError } from '../lib/errors.ts';
-import type { PackageModel, PageModel } from '../lib/model.ts';
+import type { PackageModel, PageHeading, PageModel } from '../lib/model.ts';
 import { buildHref, stripLeadingAndTrailingSlashes } from '../lib/paths.ts';
 
 export interface PydocsRouteProps {
@@ -54,6 +55,13 @@ function isPackageRootPage(page: PageModel): boolean {
 export interface PydocsPageData {
   scope: RenderScope;
   page: PageModel;
+  /**
+   * The page's table of contents: the module's own docstring headings (if
+   * its prose wrote any), ahead of `page.headings`' member surface. Computed
+   * here, not in the model, because only this scope has both the model and
+   * the rendered docstring sidecar the headings come from.
+   */
+  headings: PageHeading[];
   /** Render the symbol search box: package root pages, when the option is on. */
   withSearch: boolean;
 }
@@ -73,7 +81,12 @@ export async function resolvePydocsPage(context: PydocsContext, props: PydocsRou
         'this usually means a stale build cache, so try removing node_modules/.astro.',
     );
   }
-  return { scope, page, withSearch: context.symbolSearch && isPackageRootPage(page) };
+  return {
+    scope,
+    page,
+    headings: mergeDocstringHeadings(page, scope.rendered),
+    withSearch: context.symbolSearch && isPackageRootPage(page),
+  };
 }
 
 /**

@@ -55,7 +55,7 @@ async function readSidecar(renderedPath: string): Promise<RenderedDocstrings> {
 describe('resolveDocstringRenderer', () => {
   test('uses the configured processor (Sätteri, the Astro 7.2 default)', async () => {
     const renderer = await satteriRenderer();
-    const html = await renderer.render('A *link* to [docs](https://example.com).');
+    const { html } = await renderer.render('A *link* to [docs](https://example.com).');
     expect(html).toContain('<em>link</em>');
     expect(html).toContain('href="https://example.com"');
   });
@@ -63,22 +63,33 @@ describe('resolveDocstringRenderer', () => {
   test('renders GFM tables and dual-theme code through the configured processor', async () => {
     const renderer = await satteriRenderer();
     const table = await renderer.render('| a | b |\n| - | - |\n| 1 | 2 |');
-    expect(table).toContain('<table>');
+    expect(table.html).toContain('<table>');
 
     const code = await renderer.render('```python\nx = 1\n```');
-    expect(code).toContain('astro-code');
-    expect(code).toContain('--shiki-light');
-    expect(code).toContain('--shiki-dark');
+    expect(code.html).toContain('astro-code');
+    expect(code.html).toContain('--shiki-light');
+    expect(code.html).toContain('--shiki-dark');
   });
 
   test('falls back to @astrojs/markdown-remark when the host has no processor', async () => {
     const renderer = await resolveDocstringRenderer(markdownConfig());
     expect(renderer.name).toBe('@astrojs/markdown-remark');
-    const html = await renderer.render('```python\nx = 1\n```');
+    const { html } = await renderer.render('```python\nx = 1\n```');
     // Both engines emit `.astro-code` with the same theme custom properties, so
     // one stylesheet covers them.
     expect(html).toContain('astro-code');
     expect(html).toContain('--shiki-light');
+  });
+
+  test('reports the headings a render introduced, matching their ids', async () => {
+    const renderer = await satteriRenderer();
+    const { html, headings } = await renderer.render('# Title\n\nSome text\n\n## Sub heading\n\nMore text');
+    expect(headings).toEqual([
+      { depth: 1, slug: 'title', text: 'Title' },
+      { depth: 2, slug: 'sub-heading', text: 'Sub heading' },
+    ]);
+    expect(html).toContain('<h1 id="title">Title</h1>');
+    expect(html).toContain('<h2 id="sub-heading">Sub heading</h2>');
   });
 
   test('accepts any object implementing createRenderer', async () => {
@@ -90,7 +101,9 @@ describe('resolveDocstringRenderer', () => {
     };
     const renderer = await resolveDocstringRenderer(markdownConfig({ processor }));
     expect(renderer.name).toBe('test-processor');
-    expect(await renderer.render('hi')).toBe('<b>hi</b>');
+    // No `metadata` in this processor's result: headings come back empty,
+    // never a crash.
+    expect(await renderer.render('hi')).toEqual({ html: '<b>hi</b>', headings: [] });
   });
 
   test('ignores a processor that is not one', async () => {

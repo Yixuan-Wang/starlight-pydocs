@@ -16,6 +16,7 @@
  */
 
 import { prepareDoctestMarkdown } from './markdown.ts';
+import type { PageHeading, PageModel } from './model.ts';
 import type {
   DocstringSection,
   DocstringSectionAdmonition,
@@ -43,6 +44,19 @@ export interface DocstringMarkdownItem {
   /** Index inside the slot's collection: the entry or example block. */
   index: number;
   markdown: string;
+  /**
+   * Keep the heading metadata the renderer produced for this string. Only a
+   * `text` section's own prose feeds the page's table of contents: an
+   * admonition's body renders through the same `body` slot but its headings
+   * are internal to the aside, not page structure.
+   */
+  wantsHeadings: boolean;
+}
+
+/** One string's rendered HTML, and the headings it introduced (if any were asked for). */
+export interface DocstringRenderResult {
+  html: string;
+  headings: PageHeading[];
 }
 
 export interface RenderedSection {
@@ -59,6 +73,11 @@ export interface RenderedObject {
   sections?: Record<string, RenderedSection>;
   /** Rendered deprecation description. */
   deprecated?: string;
+  /**
+   * Headings the object's own docstring text introduced, in docstring order.
+   * Only `mergeDocstringHeadings` reads this, for a module's own page ToC.
+   */
+  headings?: PageHeading[];
 }
 
 export interface RenderedDocstrings {
@@ -129,6 +148,7 @@ function collectSection(
       slot: 'body',
       index: 0,
       markdown: (section as DocstringSectionText).value ?? '',
+      wantsHeadings: true,
     });
     return;
   }
@@ -137,7 +157,14 @@ function collectSection(
     const entries = (section as EntrySection).value;
     if (!Array.isArray(entries)) return;
     entries.forEach((entry, index) => {
-      push(items, { objectPath, sectionIndex, slot: 'entry', index, markdown: entry.description ?? '' });
+      push(items, {
+        objectPath,
+        sectionIndex,
+        slot: 'entry',
+        index,
+        markdown: entry.description ?? '',
+        wantsHeadings: false,
+      });
     });
     return;
   }
@@ -154,6 +181,7 @@ function collectSection(
         slot: 'block',
         index,
         markdown: kind === 'text' ? value : prepareDoctestMarkdown(value),
+        wantsHeadings: false,
       });
     });
     return;
@@ -171,6 +199,9 @@ function collectSection(
       slot,
       index: 0,
       markdown: value?.description ?? '',
+      // An admonition's own headings are internal to the aside, never page
+      // structure, even though it shares the `body` slot with a text section.
+      wantsHeadings: false,
     });
     return;
   }
@@ -183,6 +214,7 @@ function collectSection(
       slot: 'deprecated',
       index: 0,
       markdown: value?.description ?? '',
+      wantsHeadings: false,
     });
   }
 }
@@ -191,29 +223,39 @@ function collectSection(
  * Put rendered HTML back where it belongs.
  *
  * @param items - What `collectDocstringMarkdown` returned.
- * @param html - The rendered HTML, in the same order.
+ * @param renders - The rendered result of each item, in the same order.
  */
-export function assembleRenderedDocstrings(items: DocstringMarkdownItem[], html: string[]): RenderedDocstrings {
+export function assembleRenderedDocstrings(
+  items: DocstringMarkdownItem[],
+  renders: DocstringRenderResult[],
+): RenderedDocstrings {
   const objects: Record<string, RenderedObject> = {};
 
   items.forEach((item, index) => {
-    const rendered = html[index];
-    if (rendered === undefined || rendered === '') return;
+    const render = renders[index];
+    if (render === undefined || render.html === '') return;
 
     const object = (objects[item.objectPath] ??= {});
+    if (item.wantsHeadings && render.headings.length > 0) {
+      // A docstring can carry several `text` sections (interleaved with
+      // parameters, returns, …); their headings concatenate in docstring
+      // order, matching the order `collectDocstringMarkdown` visited them in.
+      object.headings = [...(object.headings ?? []), ...render.headings];
+    }
+
     if (item.slot === 'deprecated') {
-      object.deprecated = rendered;
+      object.deprecated = render.html;
       return;
     }
 
     const sections = (object.sections ??= {});
     const section = (sections[String(item.sectionIndex)] ??= {});
     if (item.slot === 'body') {
-      section.body = rendered;
+      section.body = render.html;
       return;
     }
     const bucket = item.slot === 'entry' ? (section.entries ??= {}) : (section.blocks ??= {});
-    bucket[String(item.index)] = rendered;
+    bucket[String(item.index)] = render.html;
   });
 
   return { objects };
@@ -257,4 +299,25 @@ export function renderedSectionBlock(
 /** Rendered deprecation description, from a `deprecated` section or admonition. */
 export function renderedDeprecation(rendered: RenderedDocstrings, objectPath: string): string {
   return rendered.objects[objectPath]?.deprecated ?? '';
+}
+
+/** Headings an object's own docstring text introduced, in docstring order. */
+export function docstringHeadings(rendered: RenderedDocstrings, objectPath: string): PageHeading[] {
+  return rendered.objects[objectPath]?.headings ?? [];
+}
+
+/**
+ * A page's table of contents, docstring headings first.
+ *
+ * `pageHeadings` (`lib/model.ts`) only ever saw the member surface: it is
+ * computed in the model, before any docstring Markdown is rendered. This adds
+ * whatever headings the module's own docstring prose introduced, ahead of the
+ * member headings, matching the order `ModuleDoc` actually renders them in
+ * (docstring first, then members). Nothing here re-slugs anything: the
+ * headings came from the same render that produced the HTML `id`s, so the
+ * slugs already agree with the page.
+ */
+export function mergeDocstringHeadings(page: PageModel, rendered: RenderedDocstrings): PageHeading[] {
+  const prose = docstringHeadings(rendered, page.object.canonicalPath);
+  return prose.length === 0 ? page.headings : [...prose, ...page.headings];
 }

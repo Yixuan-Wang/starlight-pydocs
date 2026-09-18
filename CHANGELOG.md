@@ -2,6 +2,10 @@
 
 All notable changes to `starlight-pydocs` are recorded here. New work is added under **Unreleased** and rolled into a dated version section when a release is cut.
 
+## Unreleased
+
+- 🐛 A heading written inside a module's own docstring now reaches the page's table of contents, not just its documented members.
+
 ## v0.2.1 (2026-08-14)
 
 Metadata-only release: no code changes.

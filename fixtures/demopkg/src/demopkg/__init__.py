@@ -5,6 +5,8 @@ google-style docstring sections, inheritance, overloads, positional-only and
 keyword-only parameters, re-exports through `__all__`, pydantic models,
 deprecations and private members that must stay hidden.
 
+## Overview
+
 The public surface is declared explicitly in `__all__`, so anything not listed
 there is invisible to the default member filter.
 

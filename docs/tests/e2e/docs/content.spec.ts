@@ -147,6 +147,33 @@ test('re-exported objects say where they were defined', async ({ page }) => {
   await expect(provenance).toHaveText('demopkg.report');
 });
 
+test('a heading inside the module docstring reaches the table of contents', async ({ page }) => {
+  // Deliberately asserted against a built page, not a unit test: the heading's
+  // id comes from the host's own markdown processor, rendered at
+  // astro:config:done, and only a built page proves the ToC entry and the
+  // rendered <h2> actually agree on it.
+  await page.goto('api/demopkg/');
+
+  const heading = page.locator('.pyd-module h2#overview');
+  await expect(heading).toHaveText('Overview');
+
+  const toc = page.locator('starlight-toc');
+  const link = toc.locator('a[href="#overview"]');
+  await expect(link).toHaveText('Overview');
+
+  // It leads the member headings, matching where ModuleDoc actually renders
+  // the docstring: before any member.
+  const anchors = await toc.locator('a').evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+  const overviewIndex = anchors.indexOf('#overview');
+  const firstMemberIndex = anchors.findIndex((href) => href.startsWith('#demopkg.'));
+  expect(overviewIndex).toBeGreaterThan(-1);
+  expect(overviewIndex).toBeLessThan(firstMemberIndex);
+
+  await link.click();
+  await expect(page).toHaveURL(/#overview$/);
+  await expect(heading).toBeVisible();
+});
+
 test('pydantic models are labelled through the griffe extension', async ({ page }) => {
   await page.goto('api/demopkg/models/');
 
