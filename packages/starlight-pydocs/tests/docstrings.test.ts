@@ -1,14 +1,17 @@
 import { describe, expect, test } from 'vitest';
 
-import type { DocstringMarkdownItem } from '../lib/docstrings.ts';
+import type { DocstringMarkdownItem, DocstringRenderResult } from '../lib/docstrings.ts';
 import {
   assembleRenderedDocstrings,
   collectDocstringMarkdown,
+  docstringHeadings,
+  mergeDocstringHeadings,
   renderedDeprecation,
   renderedSectionBlock,
   renderedSectionBody,
   renderedSectionEntry,
 } from '../lib/docstrings.ts';
+import type { PageHeading, PageModel } from '../lib/model.ts';
 import type { GriffeDump } from '../lib/types.ts';
 import { loadFixtureDump } from './helpers.ts';
 
@@ -101,15 +104,26 @@ describe('collectDocstringMarkdown', () => {
   });
 });
 
+/** A render result with no headings, for items that never ask for them. */
+function html(value: string): DocstringRenderResult {
+  return { html: value, headings: [] };
+}
+
 describe('assembleRenderedDocstrings', () => {
   const items: DocstringMarkdownItem[] = [
-    { objectPath: 'pkg.f', sectionIndex: 0, slot: 'body', index: 0, markdown: 'a' },
-    { objectPath: 'pkg.f', sectionIndex: 1, slot: 'entry', index: 0, markdown: 'b' },
-    { objectPath: 'pkg.f', sectionIndex: 1, slot: 'entry', index: 2, markdown: 'c' },
-    { objectPath: 'pkg.f', sectionIndex: 2, slot: 'block', index: 1, markdown: 'd' },
-    { objectPath: 'pkg.f', sectionIndex: -1, slot: 'deprecated', index: 0, markdown: 'e' },
+    { objectPath: 'pkg.f', sectionIndex: 0, slot: 'body', index: 0, markdown: 'a', wantsHeadings: true },
+    { objectPath: 'pkg.f', sectionIndex: 1, slot: 'entry', index: 0, markdown: 'b', wantsHeadings: false },
+    { objectPath: 'pkg.f', sectionIndex: 1, slot: 'entry', index: 2, markdown: 'c', wantsHeadings: false },
+    { objectPath: 'pkg.f', sectionIndex: 2, slot: 'block', index: 1, markdown: 'd', wantsHeadings: false },
+    { objectPath: 'pkg.f', sectionIndex: -1, slot: 'deprecated', index: 0, markdown: 'e', wantsHeadings: false },
   ];
-  const rendered = assembleRenderedDocstrings(items, ['<p>a</p>', '<p>b</p>', '<p>c</p>', '<pre>d</pre>', '<p>e</p>']);
+  const rendered = assembleRenderedDocstrings(items, [
+    html('<p>a</p>'),
+    html('<p>b</p>'),
+    html('<p>c</p>'),
+    html('<pre>d</pre>'),
+    html('<p>e</p>'),
+  ]);
 
   test('puts each piece where the accessors look for it', () => {
     expect(renderedSectionBody(rendered, 'pkg.f', 0)).toBe('<p>a</p>');
@@ -127,7 +141,7 @@ describe('assembleRenderedDocstrings', () => {
   });
 
   test('drops empty renders instead of storing them', () => {
-    const sparse = assembleRenderedDocstrings(items, ['', '<p>b</p>']);
+    const sparse = assembleRenderedDocstrings(items, [html(''), html('<p>b</p>')]);
     expect(renderedSectionBody(sparse, 'pkg.f', 0)).toBe('');
     expect(renderedSectionEntry(sparse, 'pkg.f', 1, 0)).toBe('<p>b</p>');
   });
@@ -135,5 +149,69 @@ describe('assembleRenderedDocstrings', () => {
   test('survives a round trip through JSON', () => {
     const parsed = JSON.parse(JSON.stringify(rendered)) as typeof rendered;
     expect(renderedSectionEntry(parsed, 'pkg.f', 1, 2)).toBe('<p>c</p>');
+  });
+
+  test('collects headings only from items that asked for them', () => {
+    const withHeading: DocstringMarkdownItem[] = [
+      { objectPath: 'pkg.g', sectionIndex: 0, slot: 'body', index: 0, markdown: 'text', wantsHeadings: true },
+      // An admonition shares the `body` slot but never contributes to the page ToC.
+      { objectPath: 'pkg.g', sectionIndex: 1, slot: 'body', index: 0, markdown: 'note', wantsHeadings: false },
+    ];
+    const heading: PageHeading = { depth: 2, slug: 'overview', text: 'Overview' };
+    const asideHeading: PageHeading = { depth: 2, slug: 'inside-the-aside', text: 'Inside the aside' };
+    const result = assembleRenderedDocstrings(withHeading, [
+      { html: '<h2 id="overview">Overview</h2>', headings: [heading] },
+      { html: '<h2 id="inside-the-aside">Inside the aside</h2>', headings: [asideHeading] },
+    ]);
+    expect(docstringHeadings(result, 'pkg.g')).toEqual([heading]);
+  });
+
+  test('concatenates headings from several text sections in docstring order', () => {
+    const twoTextSections: DocstringMarkdownItem[] = [
+      { objectPath: 'pkg.h', sectionIndex: 0, slot: 'body', index: 0, markdown: 'first', wantsHeadings: true },
+      { objectPath: 'pkg.h', sectionIndex: 2, slot: 'body', index: 0, markdown: 'second', wantsHeadings: true },
+    ];
+    const first: PageHeading = { depth: 2, slug: 'first', text: 'First' };
+    const second: PageHeading = { depth: 2, slug: 'second', text: 'Second' };
+    const result = assembleRenderedDocstrings(twoTextSections, [
+      { html: '<h2 id="first">First</h2>', headings: [first] },
+      { html: '<h2 id="second">Second</h2>', headings: [second] },
+    ]);
+    expect(docstringHeadings(result, 'pkg.h')).toEqual([first, second]);
+  });
+});
+
+describe('docstringHeadings', () => {
+  test('reads back an empty array when the object has none', () => {
+    expect(docstringHeadings({ objects: {} }, 'pkg.missing')).toEqual([]);
+  });
+});
+
+describe('mergeDocstringHeadings', () => {
+  const memberHeadings: PageHeading[] = [{ depth: 2, slug: 'pkg.thing', text: 'thing' }];
+
+  function pageFor(canonicalPath: string): PageModel {
+    return {
+      slug: 'api/pkg',
+      title: 'pkg',
+      modulePath: 'pkg',
+      object: { canonicalPath } as unknown as PageModel['object'],
+      headings: memberHeadings,
+      children: [],
+      parent: undefined,
+    };
+  }
+
+  test('prepends the module docstring headings ahead of the member headings', () => {
+    const proseHeading: PageHeading = { depth: 2, slug: 'overview', text: 'Overview' };
+    const rendered = assembleRenderedDocstrings(
+      [{ objectPath: 'pkg', sectionIndex: 0, slot: 'body', index: 0, markdown: 'x', wantsHeadings: true }],
+      [{ html: '<h2 id="overview">Overview</h2>', headings: [proseHeading] }],
+    );
+    expect(mergeDocstringHeadings(pageFor('pkg'), rendered)).toEqual([proseHeading, ...memberHeadings]);
+  });
+
+  test('is just the member headings when the docstring introduced none', () => {
+    expect(mergeDocstringHeadings(pageFor('pkg'), { objects: {} })).toBe(memberHeadings);
   });
 });

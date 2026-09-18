@@ -23,7 +23,7 @@ export async function getStaticPaths() {
 type Props = PydocsRouteProps;
 
 const props = Astro.props;
-const { scope, page, withSearch } = await resolvePydocsPage(context, props);
+const { scope, page, headings, withSearch } = await resolvePydocsPage(context, props);
 ---
 
 <StarlightPage
@@ -36,7 +36,7 @@ const { scope, page, withSearch } = await resolvePydocsPage(context, props);
     // Points anything reading the head at the Markdown twin of this page.
     head: markdownAlternate(context, props.pydocsSlug),
   }}
-  headings={page.headings}
+  headings={headings}
 >
   {withSearch ? <SymbolSearch package={props.pydocsBase} /> : null}
   <ModuleDoc doc={page.object} scope={scope} />

@@ -2,12 +2,12 @@
   "demopkg": {
     "analysis": "static",
     "docstring": {
-      "endlineno": 18,
+      "endlineno": 20,
       "lineno": 1,
       "parsed": [
         {
           "kind": "text",
-          "value": "Demo package used by the starlight-pydocs test suite.\n\n`demopkg` exists to exercise every feature of the documentation renderer:\ngoogle-style docstring sections, inheritance, overloads, positional-only and\nkeyword-only parameters, re-exports through `__all__`, pydantic models,\ndeprecations and private members that must stay hidden.\n\nThe public surface is declared explicitly in `__all__`, so anything not listed\nthere is invisible to the default member filter."
+          "value": "Demo package used by the starlight-pydocs test suite.\n\n`demopkg` exists to exercise every feature of the documentation renderer:\ngoogle-style docstring sections, inheritance, overloads, positional-only and\nkeyword-only parameters, re-exports through `__all__`, pydantic models,\ndeprecations and private members that must stay hidden.\n\n## Overview\n\nThe public surface is declared explicitly in `__all__`, so anything not listed\nthere is invisible to the default member filter."
         },
         {
           "kind": "examples",
@@ -23,7 +23,7 @@
           ]
         }
       ],
-      "value": "Demo package used by the starlight-pydocs test suite.\n\n`demopkg` exists to exercise every feature of the documentation renderer:\ngoogle-style docstring sections, inheritance, overloads, positional-only and\nkeyword-only parameters, re-exports through `__all__`, pydantic models,\ndeprecations and private members that must stay hidden.\n\nThe public surface is declared explicitly in `__all__`, so anything not listed\nthere is invisible to the default member filter.\n\nExamples:\n    Build a report and write it to disk:\n\n    >>> from demopkg import Report\n    >>> report = Report(\"weekly\")\n    >>> report.generate(\"summary\", title=\"Weekly\")\n    PosixPath('weekly.txt')"
+      "value": "Demo package used by the starlight-pydocs test suite.\n\n`demopkg` exists to exercise every feature of the documentation renderer:\ngoogle-style docstring sections, inheritance, overloads, positional-only and\nkeyword-only parameters, re-exports through `__all__`, pydantic models,\ndeprecations and private members that must stay hidden.\n\n## Overview\n\nThe public surface is declared explicitly in `__all__`, so anything not listed\nthere is invisible to the default member filter.\n\nExamples:\n    Build a report and write it to disk:\n\n    >>> from demopkg import Report\n    >>> report = Report(\"weekly\")\n    >>> report.generate(\"summary\", title=\"Weekly\")\n    PosixPath('weekly.txt')"
     },
     "exports": [
       "Report",
@@ -55,8 +55,8 @@
           "name": "float"
         },
         "docstring": {
-          "endlineno": 24,
-          "lineno": 21,
+          "endlineno": 26,
+          "lineno": 23,
           "parsed": [
             {
               "kind": "text",
@@ -65,7 +65,7 @@
           ],
           "value": "Seconds to wait for report generation before giving up.\n\nUsed as the default for [`Report.generate`][demopkg.report.Report.generate]."
         },
-        "endlineno": 20,
+        "endlineno": 22,
         "filepath": "fixtures/demopkg/src/demopkg/__init__.py",
         "is_class_private": false,
         "is_deprecated": false,
@@ -79,7 +79,7 @@
         "labels": [
           "module-attribute"
         ],
-        "lineno": 20,
+        "lineno": 22,
         "name": "DEFAULT_TIMEOUT",
         "path": "demopkg.DEFAULT_TIMEOUT",
         "relative_filepath": "fixtures/demopkg/src/demopkg/__init__.py",
@@ -89,7 +89,7 @@
       },
       "Report": {
         "analysis": "static",
-        "endlineno": 26,
+        "endlineno": 28,
         "inherited": false,
         "is_class_private": false,
         "is_deprecated": false,
@@ -100,7 +100,7 @@
         "is_special": false,
         "is_wildcard_exposed": true,
         "kind": "alias",
-        "lineno": 26,
+        "lineno": 28,
         "name": "Report",
         "path": "demopkg.Report",
         "runtime": true,
@@ -108,7 +108,7 @@
       },
       "__all__": {
         "analysis": "static",
-        "endlineno": 28,
+        "endlineno": 30,
         "filepath": "fixtures/demopkg/src/demopkg/__init__.py",
         "is_class_private": false,
         "is_deprecated": false,
@@ -122,7 +122,7 @@
         "labels": [
           "module-attribute"
         ],
-        "lineno": 28,
+        "lineno": 30,
         "name": "__all__",
         "path": "demopkg.__all__",
         "relative_filepath": "fixtures/demopkg/src/demopkg/__init__.py",
@@ -498,7 +498,7 @@
       },
       "generate_report": {
         "analysis": "static",
-        "endlineno": 26,
+        "endlineno": 28,
         "inherited": false,
         "is_class_private": false,
         "is_deprecated": false,
@@ -509,7 +509,7 @@
         "is_special": false,
         "is_wildcard_exposed": true,
         "kind": "alias",
-        "lineno": 26,
+        "lineno": 28,
         "name": "generate_report",
         "path": "demopkg.generate_report",
         "runtime": true,
