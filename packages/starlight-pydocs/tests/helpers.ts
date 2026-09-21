@@ -46,6 +46,7 @@ export const defaultFilters: NormalisedFilters = {
   private: false,
   imported: false,
   inherited: true,
+  reexports: 'full',
 };
 
 export const noMembers: NormalisedMembers = { include: [], exclude: [] };

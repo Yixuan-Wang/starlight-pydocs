@@ -66,6 +66,15 @@ export interface PydocsFiltersInput {
   imported?: boolean | undefined;
   /** Merge public members of resolvable base classes into classes. Default `true`. */
   inherited?: boolean | undefined;
+  /**
+   * How a re-exported object is documented at its re-export path.
+   *
+   * - `'full'` (default) documents it with its full content, mirroring
+   *   mkdocstrings.
+   * - `'link'` emits a heading and a link to the canonical definition instead,
+   *   avoiding duplicate content.
+   */
+  reexports?: 'full' | 'link' | undefined;
 }
 
 /** Explicit source-link URL template. */
@@ -296,6 +305,7 @@ export interface NormalisedFilters {
   private: boolean;
   imported: boolean;
   inherited: boolean;
+  reexports: 'full' | 'link';
 }
 
 export interface NormalisedMembers {
@@ -519,17 +529,26 @@ function normaliseSourceLink(
   };
 }
 
+const REEXPORTS_MODES: NormalisedFilters['reexports'][] = ['full', 'link'];
+
 function normaliseFilters(input: PydocsFiltersInput | undefined, optionPath: string): NormalisedFilters {
   // An unset option is an empty one, so every default is written once, in `read`.
   const filters = input ?? {};
   if (!isPlainObject(filters)) throw configError(optionPath, 'must be an object');
-  const read = (key: keyof NormalisedFilters, fallback: boolean): boolean =>
+  const read = (key: 'special' | 'private' | 'imported' | 'inherited', fallback: boolean): boolean =>
     optionalBoolean(filters[key], `${optionPath}.${key}`, fallback);
+
+  const reexportsInput = filters.reexports;
+  if (reexportsInput !== undefined && !REEXPORTS_MODES.includes(reexportsInput as NormalisedFilters['reexports'])) {
+    throw configError(`${optionPath}.reexports`, `must be one of ${REEXPORTS_MODES.join(', ')}`);
+  }
+
   return {
     special: read('special', false),
     private: read('private', false),
     imported: read('imported', false),
     inherited: read('inherited', true),
+    reexports: (reexportsInput as NormalisedFilters['reexports'] | undefined) ?? 'full',
   };
 }
 

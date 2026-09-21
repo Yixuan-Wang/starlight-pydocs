@@ -32,6 +32,14 @@ describe('renderPageMarkdown', () => {
     await expect(renderPageMarkdown(page(demopkg, 'demopkg'))).toMatchFileSnapshot('./snapshots/demopkg-root.md');
   });
 
+  test('link-mode re-exports render a "See" line instead of the full body', async () => {
+    const linked = await fixtureModel('demopkg', { filters: { reexports: 'link' } });
+    const markdown = renderPageMarkdown(page(linked, 'demopkg'));
+    expect(markdown).toContain('See: `demopkg.report.Report`');
+    expect(markdown).not.toContain('```python\nclass Report(BaseReport)\n```');
+    expect(markdown).not.toContain('### demopkg.Report.generate');
+  });
+
   test('headings use dotted paths at the depth the page plan promises', () => {
     const markdown = renderPageMarkdown(page(demopkg, 'demopkg.report'));
     const headings = [...markdown.matchAll(/^(#{1,6}) (.+)$/gm)].map(([, hashes, text]) => ({

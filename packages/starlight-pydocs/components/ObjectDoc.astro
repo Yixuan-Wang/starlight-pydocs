@@ -120,44 +120,58 @@ const deprecationHtml = deprecation === undefined ? '' : renderedDeprecation(sco
   </div>
 
   {
-    deprecation === undefined ? null : (
-      <aside class="pyd-aside pyd-aside--caution pyd-deprecated" data-pydocs-aside="deprecated">
-        <p class="pyd-aside-title">
-          {deprecation.version === undefined
-            ? resolve('deprecated')
-            : `${resolve('deprecatedSince')} ${deprecation.version}`}
-        </p>
-        <Markdown html={deprecationHtml} />
-      </aside>
-    )
-  }
+    doc.referenceOnly === true ? (
+      <p class="pyd-see-definition">
+        {resolve('seeDefinition')}{' '}
+        {(() => {
+          const href = hrefForPath(scope, doc.canonicalPath);
+          return href === undefined ? (
+            <code>{doc.canonicalPath}</code>
+          ) : (
+            <a href={href}>
+              <code>{doc.canonicalPath}</code>
+            </a>
+          );
+        })()}
+      </p>
+    ) : (
+      <Fragment>
+        {deprecation === undefined ? null : (
+          <aside class="pyd-aside pyd-aside--caution pyd-deprecated" data-pydocs-aside="deprecated">
+            <p class="pyd-aside-title">
+              {deprecation.version === undefined
+                ? resolve('deprecated')
+                : `${resolve('deprecatedSince')} ${deprecation.version}`}
+            </p>
+            <Markdown html={deprecationHtml} />
+          </aside>
+        )}
 
-  <Body doc={doc} scope={scope} labels={labels} />
+        <Body doc={doc} scope={scope} labels={labels} />
 
-  {
-    ownGroups.map((group) => (
-      <div class="pyd-group" data-pydocs-group={group.id}>
-        {group.members.map((member) => (
-          <Astro.self doc={member} scope={scope} headingLevel={headingLevel + 1} labels={labels} />
-        ))}
-      </div>
-    ))
-  }
-
-  {
-    inheritedGroups.map((bucket) => (
-      <details class="pyd-inherited" data-pydocs-inherited={bucket.from} open>
-        <summary>
-          {resolve('inheritedFrom')} <code>{bucket.from}</code>
-        </summary>
-        {bucket.groups.map((group) => (
+        {ownGroups.map((group) => (
           <div class="pyd-group" data-pydocs-group={group.id}>
             {group.members.map((member) => (
               <Astro.self doc={member} scope={scope} headingLevel={headingLevel + 1} labels={labels} />
             ))}
           </div>
         ))}
-      </details>
-    ))
+
+        {inheritedGroups.map((bucket) => (
+          <details class="pyd-inherited" data-pydocs-inherited={bucket.from} open>
+            <summary>
+              {resolve('inheritedFrom')} <code>{bucket.from}</code>
+            </summary>
+            {bucket.groups.map((group) => (
+              <div class="pyd-group" data-pydocs-group={group.id}>
+                {group.members.map((member) => (
+                  <Astro.self doc={member} scope={scope} headingLevel={headingLevel + 1} labels={labels} />
+                ))}
+              </div>
+            ))}
+          </details>
+        ))}
+      </Fragment>
+    )
   }
 </section>

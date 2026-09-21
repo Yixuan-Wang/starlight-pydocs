@@ -81,7 +81,13 @@ describe('normalizeConfig defaults', () => {
       { name: 'griffe_pydantic', options: undefined },
       { name: 'my_ext', options: { deep: true } },
     ]);
-    expect(pkg?.filters).toEqual({ special: false, private: true, imported: false, inherited: true });
+    expect(pkg?.filters).toEqual({
+      special: false,
+      private: true,
+      imported: false,
+      inherited: true,
+      reexports: 'full',
+    });
     expect(pkg?.members).toEqual({ include: ['demopkg.*'], exclude: ['demopkg._*'] });
     expect(pkg?.source).toEqual({ kind: 'file', path: path.join(root, 'api.json') });
     expect(pkg?.forceInspection).toBe(true);

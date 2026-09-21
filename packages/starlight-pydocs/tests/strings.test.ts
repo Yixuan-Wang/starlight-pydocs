@@ -95,6 +95,7 @@ describe('STRINGS', () => {
       'inheritedFrom',
       'reexportedFrom',
       'aliasOf',
+      'seeDefinition',
       'addedIn',
       'columnName',
       'columnType',

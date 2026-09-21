@@ -107,6 +107,11 @@ export interface DocObject {
   groups: MemberGroup[];
   /** Module the definition lives in, when this object is a re-export. */
   reexportedFrom: string | undefined;
+  /**
+   * Set when `filters.reexports` is `'link'` and this object is a re-export:
+   * the doc has no body/members, only a link to `canonicalPath`.
+   */
+  referenceOnly?: true | undefined;
   /** Class the member was inherited from. */
   inheritedFrom: string | undefined;
   /** Target path of an alias that could not be resolved inside the package. */
@@ -357,6 +362,7 @@ class ModelBuilder {
     const resolved = this.resolveAlias(object);
     const target = resolved.object;
     const reexportedFrom = context.reexportedFrom ?? resolved.reexportedFrom;
+    const referenceOnly = reexportedFrom !== undefined && this.options.filters.reexports === 'link' ? true : undefined;
 
     const kind: DocKind = target.kind === 'type alias' ? 'attribute' : (target.kind as DocKind);
     const pageSlug = target.kind === 'module' ? moduleSlug(this.options.base, docPath) : context.pageSlug;
@@ -368,20 +374,21 @@ class ModelBuilder {
       kind,
       labels: [...(target.labels ?? [])],
       object: target,
-      docstring: normaliseDocstring(target),
-      summary: briefFrom(target),
-      deprecated: deprecationFrom(target),
+      docstring: referenceOnly ? undefined : normaliseDocstring(target),
+      summary: referenceOnly ? '' : briefFrom(target),
+      deprecated: referenceOnly ? undefined : deprecationFrom(target),
       addedIn: addedInLabel(this.options.addedIn, docPath, target.path),
       parentKind: context.parentKind,
       members: [],
       groups: [],
       reexportedFrom,
+      referenceOnly,
       inheritedFrom: context.inheritedFrom,
       externalTargetPath: resolved.externalTargetPath,
       bases: undefined,
       mro: undefined,
       unresolvedBases: undefined,
-      overloads: overloadsFrom(target),
+      overloads: referenceOnly ? undefined : overloadsFrom(target),
       source: this.sourceFor(target),
       pageSlug,
     };
@@ -389,7 +396,7 @@ class ModelBuilder {
     this.objectsByPath.set(docPath, doc);
     this.rememberDocumentedPath(docPath, target.path);
 
-    if (hasMembers(target) && !context.visiting.has(target.path)) {
+    if (!referenceOnly && hasMembers(target) && !context.visiting.has(target.path)) {
       const visiting = new Set(context.visiting).add(target.path);
       const members: DocObject[] = [];
 

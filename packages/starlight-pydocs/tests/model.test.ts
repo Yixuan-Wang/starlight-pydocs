@@ -138,6 +138,35 @@ describe('alias resolution', () => {
     expect(outside?.externalTargetPath).toBe('third_party.helper');
     expect(outside?.reexportedFrom).toBeUndefined();
   });
+
+  test('link-mode re-exports produce a referenceOnly stub', async () => {
+    const linked = await fixtureModel('demopkg', { filters: { reexports: 'link' } });
+    const report = linked.objectsByPath.get('demopkg.Report');
+    expect(report?.referenceOnly).toBe(true);
+    expect(report?.reexportedFrom).toBe('demopkg.report');
+    expect(report?.members).toEqual([]);
+    expect(report?.groups).toEqual([]);
+    expect(report?.docstring).toBeUndefined();
+    expect(report?.summary).toBe('');
+
+    const definition = linked.objectsByPath.get('demopkg.report.Report');
+    expect(definition?.referenceOnly).toBeUndefined();
+    expect(definition?.members.map((member) => member.name)).toContain('generate');
+  });
+
+  test('link-mode stubs still appear in the symbol index', async () => {
+    const linked = await fixtureModel('demopkg', { filters: { reexports: 'link' } });
+    const entry = linked.symbolsByPath.get('demopkg.Report');
+    expect(entry).toBeDefined();
+    expect(entry?.pageSlug).toBe(linked.objectsByPath.get('demopkg.Report')?.pageSlug);
+    expect(linked.symbolsByPath.has('demopkg.Report.generate')).toBe(false);
+  });
+
+  test('full-mode (default) preserves current behaviour', () => {
+    const report = demopkg.objectsByPath.get('demopkg.Report');
+    expect(report?.referenceOnly).toBeUndefined();
+    expect(report?.members.map((member) => member.name)).toContain('generate');
+  });
 });
 
 describe('inheritance', () => {

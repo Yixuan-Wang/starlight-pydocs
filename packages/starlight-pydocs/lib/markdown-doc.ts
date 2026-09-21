@@ -64,6 +64,14 @@ function renderObject(doc: DocObject, depth: number, lines: string[], options: M
   const badges = objectBadges(doc, options);
   if (badges.length > 0) lines.push(badges.join(' · '), '');
 
+  if (doc.referenceOnly === true) {
+    if (doc.reexportedFrom !== undefined) {
+      lines.push(`${label('reexportedFrom', options)}: \`${doc.reexportedFrom}\``, '');
+    }
+    lines.push(`${label('seeDefinition', options)}: \`${doc.canonicalPath}\``, '');
+    return;
+  }
+
   if (doc.kind !== 'module') {
     for (const overload of doc.overloads ?? []) {
       lines.push('```python', `@overload`, overloadSignatureText(overload, doc), '```', '');

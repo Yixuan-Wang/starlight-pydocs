@@ -34,6 +34,7 @@ export const STRINGS = {
   inheritedFrom: 'Inherited from',
   reexportedFrom: 'Re-exported from',
   aliasOf: 'Alias of',
+  seeDefinition: 'See',
   deprecated: 'Deprecated',
   deprecatedSince: 'Deprecated since',
   addedIn: 'Added in',

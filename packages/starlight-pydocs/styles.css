@@ -330,6 +330,12 @@
     margin-inline-start: auto;
   }
 
+  /* A link-mode re-export stub: no body, just a pointer to the definition. */
+  .pyd-see-definition {
+    color: var(--pyd-text-muted);
+    font-style: italic;
+  }
+
   /* -- Docstring sections ------------------------------------------------- */
 
   .pyd-section {
