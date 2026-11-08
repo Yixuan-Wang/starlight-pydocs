@@ -23,7 +23,7 @@ export async function getStaticPaths() {
 type Props = PydocsRouteProps;
 
 const props = Astro.props;
-const { scope, page, headings, withSearch } = await resolvePydocsPage(context, props);
+const { scope, page, headings, withSearch } = await resolvePydocsPage(context, props, Astro.locals);
 ---
 
 <StarlightPage
@@ -33,6 +33,9 @@ const { scope, page, headings, withSearch } = await resolvePydocsPage(context, p
     // OpenGraph description instead of the site-wide one.
     ...(page.object.summary === '' ? {} : { description: page.object.summary }),
     pagefind: true,
+    // Members sit one level below the "API" heading, so methods are h4: keep
+    // them in the table of contents.
+    tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     // Points anything reading the head at the Markdown twin of this page.
     head: markdownAlternate(context, props.pydocsSlug),
   }}

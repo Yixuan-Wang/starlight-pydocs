@@ -727,6 +727,10 @@
     padding-inline-start: 0.75rem;
   }
 
+  .pyd-toc-depth-4 {
+    padding-inline-start: 1.5rem;
+  }
+
   /* -- Narrow screens ----------------------------------------------------- */
 
   @media (max-width: 50rem) {

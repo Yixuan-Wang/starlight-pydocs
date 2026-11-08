@@ -87,6 +87,8 @@ export const STRINGS = {
   permalink: 'Permalink to',
   /** Sidebar link to a package's root page. */
   overview: 'Overview',
+  /** Groups a module's members when its docstring prose has headings of its own. */
+  api: 'API',
   onPage: 'On this page',
   noMembers: 'No documented members.',
   undocumented: 'No description.',

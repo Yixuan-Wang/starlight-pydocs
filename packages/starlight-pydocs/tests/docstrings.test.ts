@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import type { DocstringMarkdownItem, DocstringRenderResult } from '../lib/docstrings.ts';
+import type { DocstringMarkdownItem, DocstringRenderResult, RenderedDocstrings } from '../lib/docstrings.ts';
 import {
   assembleRenderedDocstrings,
   collectDocstringMarkdown,
@@ -195,23 +195,38 @@ describe('mergeDocstringHeadings', () => {
       slug: 'api/pkg',
       title: 'pkg',
       modulePath: 'pkg',
-      object: { canonicalPath } as unknown as PageModel['object'],
+      object: { canonicalPath, path: canonicalPath } as unknown as PageModel['object'],
       headings: memberHeadings,
       children: [],
       parent: undefined,
     };
   }
 
-  test('prepends the module docstring headings ahead of the member headings', () => {
+  test('puts the docstring headings first and nests the members under an API heading', () => {
     const proseHeading: PageHeading = { depth: 2, slug: 'overview', text: 'Overview' };
     const rendered = assembleRenderedDocstrings(
       [{ objectPath: 'pkg', sectionIndex: 0, slot: 'body', index: 0, markdown: 'x', wantsHeadings: true }],
       [{ html: '<h2 id="overview">Overview</h2>', headings: [proseHeading] }],
     );
-    expect(mergeDocstringHeadings(pageFor('pkg'), rendered)).toEqual([proseHeading, ...memberHeadings]);
+    expect(mergeDocstringHeadings(pageFor('pkg'), rendered, 'API')).toEqual([
+      proseHeading,
+      { depth: 2, slug: 'pkg--api', text: 'API' },
+      { depth: 3, slug: 'pkg.thing', text: 'thing' },
+    ]);
   });
 
-  test('is just the member headings when the docstring introduced none', () => {
-    expect(mergeDocstringHeadings(pageFor('pkg'), { objects: {} })).toBe(memberHeadings);
+  test('adds no API heading when the page has no member headings', () => {
+    const proseHeading: PageHeading = { depth: 2, slug: 'overview', text: 'Overview' };
+    const rendered: RenderedDocstrings = { objects: { pkg: { headings: [proseHeading] } } };
+    expect(mergeDocstringHeadings({ ...pageFor('pkg'), headings: [] }, rendered, 'API')).toEqual([
+      proseHeading,
+    ]);
+  });
+
+  test('still nests the members under the API heading when the docstring has no headings', () => {
+    expect(mergeDocstringHeadings(pageFor('pkg'), { objects: {} }, 'API')).toEqual([
+      { depth: 2, slug: 'pkg--api', text: 'API' },
+      { depth: 3, slug: 'pkg.thing', text: 'thing' },
+    ]);
   });
 });

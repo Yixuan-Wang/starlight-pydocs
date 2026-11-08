@@ -7,13 +7,20 @@
  * (`StarlightPage` under Starlight), so this component starts at the docstring
  * and puts members at heading level 2, matching the depths `pageHeadings`
  * records for the table of contents.
+ *
+ * Members sit under an "API" heading at that level and move one level down,
+ * so neither the docstring's own headings nor the summary above them read as
+ * siblings of the members; `mergeDocstringHeadings` nests the table of
+ * contents the same way.
  */
+import { apiAnchor } from '../lib/docstrings.ts';
 import { createStringResolver } from '../lib/i18n.ts';
 import type { DocObject } from '../lib/model.ts';
 import type { RenderScope } from '../lib/render.ts';
 import { pageHref } from '../lib/render.ts';
 import type { StringOverrides } from '../lib/strings.ts';
 import { DocstringSections, MemberSummary } from 'virtual:starlight-pydocs/components';
+import Heading from './Heading.astro';
 import ObjectDoc from './ObjectDoc.astro';
 
 interface Props {
@@ -40,10 +47,22 @@ const submodules = (doc.groups.find((group) => group.id === 'modules')?.members 
 // Empty groups are dropped when the model builds them, so any group at all
 // means the module documents something.
 const hasMembers = doc.groups.length > 0;
+
+// Submodules are links, not headings, so only real members need the heading.
+const withApiHeading = groups.length > 0;
+const memberLevel = withApiHeading ? headingLevel + 1 : headingLevel;
 ---
 
 <div class="pyd-module" data-pydocs-kind="module" data-pydocs-path={doc.path}>
   <DocstringSections doc={doc} scope={scope} labels={labels} />
+
+  {
+    withApiHeading ? (
+      <Heading level={headingLevel} id={apiAnchor(doc.path)} class="pyd-api-heading" labels={labels}>
+        {resolve('api')}
+      </Heading>
+    ) : null
+  }
 
   <MemberSummary doc={doc} scope={scope} labels={labels} />
 
@@ -69,7 +88,7 @@ const hasMembers = doc.groups.length > 0;
     groups.map((group) => (
       <div class="pyd-group" data-pydocs-group={group.id}>
         {group.members.map((member) => (
-          <ObjectDoc doc={member} scope={scope} headingLevel={headingLevel} labels={labels} />
+          <ObjectDoc doc={member} scope={scope} headingLevel={memberLevel} labels={labels} />
         ))}
       </div>
     ))

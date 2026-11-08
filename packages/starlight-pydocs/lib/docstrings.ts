@@ -307,17 +307,35 @@ export function docstringHeadings(rendered: RenderedDocstrings, objectPath: stri
 }
 
 /**
- * A page's table of contents, docstring headings first.
+ * Anchor of the "API" heading `ModuleDoc` puts above a module's members. `--`
+ * cannot occur in a Python dotted path, so it never collides with an object
+ * anchor (mkdocstrings uses the same separator for its category headings).
+ */
+export function apiAnchor(modulePath: string): string {
+  return `${modulePath}--api`;
+}
+
+/**
+ * A page's table of contents: docstring headings, then the members nested
+ * under an "API" heading (`apiLabel`).
  *
  * `pageHeadings` (`lib/model.ts`) only ever saw the member surface: it is
  * computed in the model, before any docstring Markdown is rendered. This adds
  * whatever headings the module's own docstring prose introduced, ahead of the
- * member headings, matching the order `ModuleDoc` actually renders them in
- * (docstring first, then members). Nothing here re-slugs anything: the
- * headings came from the same render that produced the HTML `id`s, so the
- * slugs already agree with the page.
+ * members, and moves the members one level down under the "API" heading,
+ * exactly as `ModuleDoc` renders them. Nothing here re-slugs anything: the
+ * prose headings came from the same render that produced the HTML `id`s.
  */
-export function mergeDocstringHeadings(page: PageModel, rendered: RenderedDocstrings): PageHeading[] {
+export function mergeDocstringHeadings(
+  page: PageModel,
+  rendered: RenderedDocstrings,
+  apiLabel: string,
+): PageHeading[] {
   const prose = docstringHeadings(rendered, page.object.canonicalPath);
-  return prose.length === 0 ? page.headings : [...prose, ...page.headings];
+  if (page.headings.length === 0) return prose;
+  return [
+    ...prose,
+    { depth: 2, slug: apiAnchor(page.object.path), text: apiLabel },
+    ...page.headings.map((heading) => ({ ...heading, depth: heading.depth + 1 })),
+  ];
 }

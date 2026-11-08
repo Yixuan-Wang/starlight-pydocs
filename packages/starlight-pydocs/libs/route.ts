@@ -9,6 +9,7 @@
 import type { PydocsContext, PydocsPackageContext } from '../lib/context.ts';
 import { packageForSlug } from '../lib/context.ts';
 import { getModel } from '../lib/data.ts';
+import { createStringResolver } from '../lib/i18n.ts';
 import { mergeDocstringHeadings } from '../lib/docstrings.ts';
 import { listPydocsPages } from '../lib/pages.ts';
 import type { RenderScope } from '../lib/render.ts';
@@ -71,7 +72,12 @@ export interface PydocsPageData {
  * entrypoints (Starlight and vanilla) share this preamble; only the shell
  * around it differs.
  */
-export async function resolvePydocsPage(context: PydocsContext, props: PydocsRouteProps): Promise<PydocsPageData> {
+export async function resolvePydocsPage(
+  context: PydocsContext,
+  props: PydocsRouteProps,
+  /** `Astro.locals`, for the translated label in the table of contents. */
+  locals?: unknown,
+): Promise<PydocsPageData> {
   // The scope already carries the model, so the page is a lookup, not a load.
   const scope = await createRenderScope(context, props.pydocsBase);
   const page = scope.model.pagesBySlug.get(props.pydocsSlug);
@@ -84,7 +90,7 @@ export async function resolvePydocsPage(context: PydocsContext, props: PydocsRou
   return {
     scope,
     page,
-    headings: mergeDocstringHeadings(page, scope.rendered),
+    headings: mergeDocstringHeadings(page, scope.rendered, createStringResolver(locals)('api')),
     withSearch: context.symbolSearch && isPackageRootPage(page),
   };
 }
