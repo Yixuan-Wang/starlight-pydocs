@@ -54,8 +54,13 @@ jobs:
             exit 1
           fi
 
-      # prepack copies README/CHANGELOG/LICENSE in from the repo root, and
-      # provenance is attached via the id-token permission above.
+      # README/CHANGELOG/LICENSE and the agent skill live at the repo root;
+      # copy them in before packing. (Not a prepack script: pnpm refuses git
+      # dependencies that carry lifecycle scripts.) Provenance is attached via
+      # the id-token permission above.
+      - name: Copy root files into the package
+        run: cp README.md CHANGELOG.md LICENSE packages/starlight-pydocs/ && rm -rf packages/starlight-pydocs/skills && cp -R skills packages/starlight-pydocs/skills
+
       - name: Publish
         working-directory: packages/starlight-pydocs
         run: npm publish --provenance --access public

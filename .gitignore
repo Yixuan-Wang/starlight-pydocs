@@ -47,7 +47,7 @@ pnpm-debug.log*
 # pnpm
 .pnpm-store
 
-# Generated for npm publish from the repo root (see package prepack)
+# Generated for npm publish from the repo root (see .github/workflows/release.yml)
 packages/starlight-pydocs/README.md
 packages/starlight-pydocs/CHANGELOG.md
 packages/starlight-pydocs/LICENSE

@@ -189,7 +189,9 @@ them. `pnpm typecheck` runs both.
   version, and publishes a GitHub release tagged `vX.Y.Z`, which triggers
   `.github/workflows/release.yml` (npm trusted publishing via OIDC, no token; the
   workflow guards tag == package version; the very first publish is manual).
-- `skills/starlight-pydocs/SKILL.md` is copied into the npm package by `prepack`, and
+- `skills/starlight-pydocs/SKILL.md` (with the root README, CHANGELOG and LICENSE) is
+  copied into the npm package by a step in `release.yml`, not a `prepack` script:
+  pnpm refuses git dependencies that carry lifecycle scripts. It is also copied
   by hand into `docs/src/content/docs/guides/agent-skill.mdx` (body only, headings one
   level down). Edit both together; an e2e test fails when they differ. It lives at the
   repo root because that is where `npx skills add` looks first.
