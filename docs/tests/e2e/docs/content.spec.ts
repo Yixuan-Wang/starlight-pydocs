@@ -101,6 +101,7 @@ test.describe('demopkg.report', () => {
     await expect(deprecated.locator('.pyd-badge[data-pydocs-badge="deprecated"]')).toHaveText('Deprecated');
     const note = deprecated.locator('.pyd-aside[data-pydocs-aside="deprecated"]');
     await expect(note).toContainText('Since 0.3');
+    await expect(note.locator('.pyd-aside-title svg.pyd-aside-icon')).toBeVisible();
     // The prose went through the site's markdown processor, so the backticks in
     // the docstring are real code elements.
     await expect(note.locator('.pyd-markdown code')).toHaveText('generate_report');
@@ -110,6 +111,7 @@ test.describe('demopkg.report', () => {
     const note = member(page, 'demopkg.report.Report.generate').locator('.pyd-aside');
     await expect(note).toHaveAttribute('data-pydocs-aside', 'note');
     await expect(note).toContainText('deliberately synchronous');
+    await expect(note.locator('.pyd-aside-title svg.pyd-aside-icon')).toBeVisible();
   });
 
   test('mkdocstrings cross-references in prose become links', async ({ page }) => {

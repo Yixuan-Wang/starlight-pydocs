@@ -8,6 +8,7 @@ All notable changes to `starlight-pydocs` are recorded here. New work is added u
 - 🐛 A heading written inside a module's own docstring now reaches the page's table of contents, not just its documented members.
 - 💄 Module pages group their members under an "API" heading, apart from the module docstring.
 - 💄 A quieter default theme.
+- 💄 Docstring admonitions and deprecation notes show the same icons as Starlight asides.
 
 ## v0.3.0 (2026-10-05)
 

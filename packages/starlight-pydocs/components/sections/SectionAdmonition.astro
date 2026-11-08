@@ -8,6 +8,7 @@ import type { DocObject } from '../../lib/model.ts';
 import type { RenderScope } from '../../lib/render.ts';
 import { admonitionKind, admonitionTitle } from '../../lib/render.ts';
 import type { DocstringSectionAdmonition } from '../../lib/types.ts';
+import AsideIcon from '../AsideIcon.astro';
 
 interface Props {
   section: DocstringSectionAdmonition;
@@ -25,6 +26,13 @@ const html = renderedSectionBody(scope.rendered, doc.canonicalPath, sectionIndex
 ---
 
 <aside class:list={['pyd-aside', `pyd-aside--${kind}`]} aria-label={title} data-pydocs-aside={kind}>
-  {title === '' ? null : <p class="pyd-aside-title">{title}</p>}
+  {
+    title === '' ? null : (
+      <p class="pyd-aside-title">
+        <AsideIcon kind={kind} />
+        {title}
+      </p>
+    )
+  }
   <div class="pyd-markdown" set:html={html} />
 </aside>

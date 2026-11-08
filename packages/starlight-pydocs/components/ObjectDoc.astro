@@ -21,6 +21,7 @@ import type { RenderScope } from '../lib/render.ts';
 import { hrefForPath, splitInherited } from '../lib/render.ts';
 import type { StringKey, StringOverrides } from '../lib/strings.ts';
 import { AttributeDoc, ClassDoc, FunctionDoc, Heading, SourceLink } from 'virtual:starlight-pydocs/components';
+import AsideIcon from './AsideIcon.astro';
 import Badges from './Badges.astro';
 import Markdown from './Markdown.astro';
 
@@ -139,6 +140,7 @@ const deprecationHtml = deprecation === undefined ? '' : renderedDeprecation(sco
         {deprecation === undefined ? null : (
           <aside class="pyd-aside pyd-aside--caution pyd-deprecated" data-pydocs-aside="deprecated">
             <p class="pyd-aside-title">
+              <AsideIcon kind="caution" />
               {deprecation.version === undefined
                 ? resolve('deprecated')
                 : `${resolve('deprecatedSince')} ${deprecation.version}`}
