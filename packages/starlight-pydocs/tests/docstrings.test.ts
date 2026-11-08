@@ -10,6 +10,7 @@ import {
   renderedSectionBlock,
   renderedSectionBody,
   renderedSectionEntry,
+  returnEntryName,
 } from '../lib/docstrings.ts';
 import type { PageHeading, PageModel } from '../lib/model.ts';
 import type { GriffeDump } from '../lib/types.ts';
@@ -228,5 +229,28 @@ describe('mergeDocstringHeadings', () => {
       { depth: 2, slug: 'pkg--api', text: 'API' },
       { depth: 3, slug: 'pkg.thing', text: 'thing' },
     ]);
+  });
+});
+
+describe('returnEntryName', () => {
+  const name = (value: string) => ({ cls: 'ExprName', name: value });
+
+  test('drops a name that duplicates the annotation (google `str: text`)', () => {
+    expect(returnEntryName('str', name('str'))).toBe('');
+  });
+
+  test('drops a name matching the last segment of a dotted annotation', () => {
+    const path = { cls: 'ExprAttribute', values: [name('pathlib'), name('Path')] };
+    expect(returnEntryName('Path', path)).toBe('');
+  });
+
+  test('keeps a real name', () => {
+    expect(returnEntryName('count', name('int'))).toBe('count');
+  });
+
+  test('keeps a name with no annotation, and handles a missing name', () => {
+    expect(returnEntryName('result', null)).toBe('result');
+    expect(returnEntryName(undefined, name('int'))).toBe('');
+    expect(returnEntryName('', name('int'))).toBe('');
   });
 });

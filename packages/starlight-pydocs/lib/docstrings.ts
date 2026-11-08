@@ -15,9 +15,11 @@
  * the definition's prose, so components look up `doc.canonicalPath`.
  */
 
+import { annotationText } from './expr.ts';
 import { prepareDoctestMarkdown } from './markdown.ts';
 import type { PageHeading, PageModel } from './model.ts';
 import type {
+  Annotation,
   DocstringSection,
   DocstringSectionAdmonition,
   DocstringSectionDeprecated,
@@ -284,6 +286,21 @@ export function renderedSectionEntry(
   entryIndex: number,
 ): string {
   return sectionOf(rendered, objectPath, sectionIndex)?.entries?.[String(entryIndex)] ?? '';
+}
+
+/**
+ * The name to show for a returns/yields/receives entry, or `''` when the
+ * "name" is really the type. Griffe's Google parser defaults to
+ * `returns_named_value`, so `str: The text.` becomes a value *named* `str`
+ * whose annotation is then filled from the signature, duplicating it. A name
+ * equal to the annotation, or to its last dotted segment (`Path` for
+ * `pathlib.Path`), is dropped.
+ */
+export function returnEntryName(name: string | null | undefined, annotation: Annotation): string {
+  if (name === null || name === undefined || name === '') return '';
+  if (annotation === null || annotation === undefined) return name;
+  const text = annotationText(annotation);
+  return name === text || name === text.slice(text.lastIndexOf('.') + 1) ? '' : name;
 }
 
 /** Rendered HTML of one block of an examples section. */

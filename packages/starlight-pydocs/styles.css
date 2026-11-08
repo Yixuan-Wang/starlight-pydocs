@@ -385,6 +385,10 @@
   }
 
   .pyd-values dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
     font-weight: 600;
   }
 

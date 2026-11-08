@@ -9,6 +9,7 @@ All notable changes to `starlight-pydocs` are recorded here. New work is added u
 - 💄 Module pages group their members under an "API" heading, apart from the module docstring.
 - 💄 A quieter default theme.
 - 💄 Docstring admonitions and deprecation notes show the same icons as Starlight asides.
+- 🐛 A Google-style `Returns: str: …` entry no longer shows its type twice, and a returned value's name and type are spaced apart.
 
 ## v0.3.0 (2026-10-05)
 
