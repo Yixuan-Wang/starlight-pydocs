@@ -6,6 +6,7 @@ All notable changes to `starlight-pydocs` are recorded here. New work is added u
 
 - ✨ `filters.reexports: 'link'` documents a re-export as a heading and a "See" link to its definition, instead of duplicating the full content.
 - 🐛 A heading written inside a module's own docstring now reaches the page's table of contents, not just its documented members.
+- 💄 A quieter default theme.
 
 ## v0.3.0 (2026-10-05)
 

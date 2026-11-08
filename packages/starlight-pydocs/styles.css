@@ -42,7 +42,7 @@
     --pyd-danger: var(--sl-color-red, #dc2626);
     --pyd-danger-low: var(--sl-color-red-low, #fee2e2);
 
-    --pyd-radius: 0.375rem;
+    --pyd-radius: 0.25rem;
     --pyd-mono: var(--sl-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   }
 
@@ -81,14 +81,10 @@
 
   /* -- Members and headings ------------------------------------------------ */
 
+  /* Members are separated by space alone: no rule down the side, no hover
+     highlight. The heading and the signature already mark where one starts. */
   .pyd-member {
     margin-block: 1.5rem 2rem;
-    padding-inline-start: 0.875rem;
-    border-inline-start: 2px solid var(--pyd-border);
-  }
-
-  .pyd-member:hover {
-    border-inline-start-color: var(--pyd-accent);
   }
 
   .pyd-member .pyd-member {
@@ -130,48 +126,39 @@
 
   /* -- Badges ------------------------------------------------------------- */
 
-  /* The badges flow inline after the heading name, so they carry their own gap. */
+  /* The badges are words ("method", "class attribute"), so they keep the
+     heading's own face, but take the host's inline-code tint and padding so a
+     multi-word label still reads as one unit. They flow inline after the name. */
   .pyd-badges {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
     margin-inline-start: 0.5rem;
-    vertical-align: middle;
+    color: var(--pyd-text-muted);
+    font-size: var(--sl-text-base, 1rem);
+    font-weight: 400;
   }
 
   .pyd-badge {
-    display: inline-block;
-    padding: 0.0625rem 0.375rem;
-    border: 1px solid var(--pyd-border);
-    border-radius: 1rem;
-    background: var(--pyd-surface);
-    color: var(--pyd-text-muted);
-    font-family: var(--pyd-mono);
-    font-size: 0.6875rem;
-    font-weight: 500;
-    line-height: 1.5;
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--pyd-radius);
+    background: var(--sl-color-bg-inline-code, var(--pyd-surface));
     white-space: nowrap;
   }
 
-  .pyd-badge--kind {
-    background: var(--pyd-accent);
-    border-color: var(--pyd-accent);
-    /* LinkButton pattern: `black` is the colour that contrasts the accent. */
-    color: var(--pyd-text-invert);
+  .pyd-badge + .pyd-badge {
+    margin-inline-start: 0.375rem;
   }
 
   .pyd-badge--deprecated {
-    background: var(--pyd-caution-low);
-    border-color: var(--pyd-caution);
     color: var(--pyd-caution);
   }
 
   /* -- Signatures --------------------------------------------------------- */
 
+  /* A tinted surface without a frame. `border: 0` is explicit because
+     Starlight's content styles give every `pre` a border. */
   .pyd-signature {
     margin-block: 0.5rem;
     padding: 0.625rem 0.75rem;
-    border: 1px solid var(--pyd-border);
+    border: 0;
     border-radius: var(--pyd-radius);
     background: var(--pyd-surface);
     color: var(--pyd-text);
@@ -200,8 +187,6 @@
   }
 
   .pyd-signature--overload {
-    background: none;
-    border-style: dashed;
     color: var(--pyd-text-muted);
   }
 
@@ -249,7 +234,6 @@
   .pyd-fold:not(:has(.pyd-fold-input:checked)) .pyd-signature {
     max-height: 11em;
     overflow: hidden;
-    mask-image: linear-gradient(to bottom, #000 70%, transparent);
   }
 
   .pyd-fold-toggle {
@@ -274,17 +258,22 @@
     display: none;
   }
 
+  /* The accent colour alone marks a linked name; an underline on every type in
+     a signature is noise, so it appears on hover. */
   .pyd-type {
     color: var(--pyd-accent);
-    text-decoration-line: underline;
-    text-decoration-style: solid;
-    text-decoration-thickness: 1px;
+    text-decoration: none;
     text-underline-offset: 0.2em;
   }
 
-  /* A dashed underline marks the link as leaving the site, so a reader can tell
-     an inventory entry from one of our own objects before clicking. */
-  .pyd-type--external {
+  .pyd-type:hover {
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+  }
+
+  /* A dashed hover underline marks the link as leaving the site, so a reader
+     can tell an inventory entry from one of our own objects before clicking. */
+  .pyd-type--external:hover {
     text-decoration-style: dashed;
   }
 
@@ -344,11 +333,8 @@
 
   .pyd-section-title {
     margin-block: 0.75rem 0.375rem;
-    font-size: 0.8125rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--pyd-text-muted);
+    color: var(--pyd-text);
   }
 
   .pyd-table-wrap {
@@ -375,20 +361,8 @@
 
   .pyd-params thead th,
   .pyd-summary-table thead th {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--pyd-text-muted);
     font-weight: 600;
-  }
-
-  .pyd-param-name code,
-  .pyd-param-type code,
-  .pyd-param-default code,
-  .pyd-value-name,
-  .pyd-value-type {
-    font-family: var(--pyd-mono);
-    font-size: 0.8125rem;
   }
 
   .pyd-param-description > :first-child {
@@ -437,7 +411,6 @@
   .pyd-aside {
     margin-block: 1rem;
     padding: 0.75rem 1rem;
-    border-inline-start: 4px solid var(--pyd-note);
     border-radius: var(--pyd-radius);
     background: var(--pyd-note-low);
     color: var(--pyd-text);
@@ -459,7 +432,6 @@
   }
 
   .pyd-aside--tip {
-    border-inline-start-color: var(--pyd-tip);
     background: var(--pyd-tip-low);
   }
 
@@ -468,7 +440,6 @@
   }
 
   .pyd-aside--caution {
-    border-inline-start-color: var(--pyd-caution);
     background: var(--pyd-caution-low);
   }
 
@@ -477,7 +448,6 @@
   }
 
   .pyd-aside--danger {
-    border-inline-start-color: var(--pyd-danger);
     background: var(--pyd-danger-low);
   }
 
@@ -502,11 +472,6 @@
     margin-block: 1rem;
   }
 
-  .pyd-summary-table code {
-    font-family: var(--pyd-mono);
-    font-size: 0.8125rem;
-  }
-
   .pyd-inherited-note {
     color: var(--pyd-text-muted);
     font-size: 0.8125rem;
@@ -526,20 +491,12 @@
      lead somewhere; closing one is the reader's choice. */
   .pyd-inherited {
     margin-block: 1rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px dashed var(--pyd-border);
-    border-radius: var(--pyd-radius);
   }
 
   .pyd-inherited > summary {
     cursor: pointer;
     font-size: 0.875rem;
     color: var(--pyd-text-muted);
-  }
-
-  .pyd-inherited > summary code {
-    font-family: var(--pyd-mono);
-    font-size: 0.8125rem;
   }
 
   /* -- Symbol search ------------------------------------------------------ */
@@ -589,7 +546,7 @@
     border: 1px solid var(--pyd-border);
     border-radius: var(--pyd-radius);
     background: var(--pyd-bg);
-    box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+    box-shadow: var(--sl-shadow-md, 0 4px 12px rgb(0 0 0 / 10%));
   }
 
   .pyd-search-results[hidden] {
@@ -598,10 +555,8 @@
 
   .pyd-search-group-label {
     margin: 0.375rem 0.5rem 0.125rem;
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--pyd-text-muted);
   }
 
@@ -627,8 +582,7 @@
   }
 
   .pyd-search-option-path {
-    font-family: var(--pyd-mono);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--pyd-text-muted);
     overflow-wrap: anywhere;
   }
@@ -735,7 +689,6 @@
   }
 
   .pyd-page-title {
-    font-family: var(--pyd-mono);
     font-size: 1.75rem;
     margin-block: 0 1rem;
     overflow-wrap: anywhere;
@@ -757,10 +710,6 @@
   .pyd-toc-title {
     margin-block: 0 0.5rem;
     font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    color: var(--pyd-text-muted);
   }
 
   .pyd-toc ul {
@@ -790,10 +739,6 @@
       position: static;
       max-height: none;
       order: -1;
-    }
-
-    .pyd-member {
-      padding-inline-start: 0.625rem;
     }
 
     .pyd-signature {
